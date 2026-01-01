@@ -1,0 +1,127 @@
+---
+title: "ProjectCode"
+author: "Esther Akinpelu"
+date: "2025-12-14"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r}
+library(MASS)
+boston = (Boston)
+head(boston)
+#sum(is.na(boston)) #to check for missing values in the dataset, none was found
+crim <- boston[, 1]
+zn <- boston[, 2]
+indus <- boston[, 3]
+chas <- boston[, 4]
+nox <- boston[, 5]
+rm <- boston[, 6]
+age <- boston[, 7]
+dis <- boston[, 8]
+rad <- boston[, 9]
+tax <- boston[, 10]
+ptratio <- boston[, 11]
+black <- boston[, 12]
+lstat <- boston[, 13]
+medv <- boston[, 14]
+```
+
+```{r}
+#Tested for normality
+fit = lm(crim ~ ., data = boston)
+qqnorm(fit$resi, main = "Normal Q-Q plot before Transformation")
+qqline(fit$resi)
+#The data are not normally distributed. They appear right-skewed with heavy upper-tail behavior, so normal-based methods or assumptions would likely be inappropriate without transformation.
+```
+
+```{r}
+fit1 = lm(log(crim) ~ ., data = boston)
+qqnorm(fit1$resi, main = "Normal Q-Q plot after Log Transformation")
+qqline(fit1$resi)
+
+#Checking for outliers
+library(car)
+outlierTest(fit1)
+#Checking for outliers was conducted using the transformed model
+```
+
+
+```{r}
+corr_matrix <- boston[, c("crim", "zn", "indus", "chas", "nox", "rm", "age", "dis", "rad", "tax", "ptratio", "black","lstat", "medv")]
+corr_matrix <- round(cor(corr_matrix), 1)
+corr_matrix
+```
+
+```{r}
+ #From the correlation matrix it is discovered that rad and tax are highly correlated, I fitted the full model without rad and also try to fit it without tax separately, the adj-R squared of the model without tax was higher than when it was without rad alone.Tax was removed from the model
+fit_no_rad <- lm(log(crim) ~ . - rad, data = boston)
+fit_no_tax <- lm(log(crim) ~ . - tax, data = boston)
+summary(fit_no_rad)
+summary(fit_no_tax)
+```
+
+
+```{r}
+null = lm(log(crim) ~ 1, data = boston)
+full = lm(log(crim) ~ . - tax, data = boston)
+# Forward selection procedure using AIC
+FORW1=stepAIC(null, scope=list(lower=null, upper=full), data=boston, direction="forward")
+summary(FORW1)
+FORW1$anova
+
+
+```
+
+```{r}
+# Backward selection procedure using AIC
+BACK1=stepAIC(full, data=boston, direction="backward")
+summary(BACK1); 
+BACK1$anova
+```
+
+```{r}
+# Stepwise selection procedure 
+STEPW=stepAIC(null, scope = list(upper=full), data=boston, direction="both")
+summary(STEPW)
+```
+
+```{r}
+library(leaps)
+x = model.matrix(full)[, -1]
+y =log(boston$crim)
+all = regsubsets(x,y, all.best = FALSE)
+Cp = round(summary(all)$cp,2)
+AdjR2 = round(summary(all)$adjr2,2)
+SSRes = round(summary(all)$rss,2)
+BIC= round(summary(all)$bic,2)
+R2 = round(summary(all)$rsq,2)
+Matrix = round(summary(all)$which,2)
+
+p = apply(Matrix,1, sum)
+MSE = round(SSRes/(length(boston)-p-1),2)
+
+
+output = cbind(p, Matrix, SSRes, BIC, R2, AdjR2, MSE, Cp)
+
+output[Cp<12,]
+
+```
+Model with 7 predictors which are zn, nox, age, rad, black, ptratio and lstat. The Cp of this model is closer to 12 (k) and the adjusted R-squared is quite hight it also have the lowest MSE.
+```{r}
+finalmodel <- lm(log(crim) ~ zn + nox + age + rad + ptratio+black + lstat, data= boston)
+summary(finalmodel)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
