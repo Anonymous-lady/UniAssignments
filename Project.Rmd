@@ -114,14 +114,5 @@ finalmodel <- lm(log(crim) ~ zn + nox + age + rad + ptratio+black + lstat, data=
 summary(finalmodel)
 ```
 
-```{r}
+SEE "PREDICTION OF CRIME RATE IN BOSTON.docx" for proper explanation.
 
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
